@@ -1,6 +1,4 @@
 name: 03 Build Artifact Workflow
-
-
 on:
   pull_request:
     branches:
