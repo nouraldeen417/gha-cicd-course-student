@@ -8,7 +8,9 @@ on:
       - opened
       - synchronize
       - reopened
-
+  push:
+      branches:
+        - main
 
 env:
   IMAGE_NAME: tiny-health-app
