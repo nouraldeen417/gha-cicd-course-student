@@ -6,7 +6,6 @@ on:
 
 env:
   IMAGE_NAME: tiny-health-app
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
   ECR_REPOSITORY: lab-app
 
 permissions:
@@ -14,50 +13,61 @@ permissions:
 
 jobs:
   build-package:
-    # Use a fresh GitHub-hosted runner for the build.
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
-        # Get the repository files onto the runner.
         uses: actions/checkout@v4
-
-      - name: Set image tag
-        # Use today's UTC date plus the GitHub run ID.
-        # This keeps the tag easy to explain and still unique for the run.
-        id: image-tag
-        run: |
-          TODAY="$(date -u +%Y-%m-%d)"
-          IMAGE_TAG="${TODAY}-${GITHUB_RUN_ID}"
-          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}   # ← add this
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Log in to Amazon ECR
-        # Exchange AWS credentials for a Docker login token scoped to ECR.
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
-        # Create the packaged application image with one traceable tag.
-        # The deploy workflow will pull this exact same tag later.
+      - name: Set image tags
+        # Generate the dynamic tag and derive the full ECR image URIs for both tags.
+        id: image-tag
+        run: |
+          TODAY="$(date -u +%Y-%m-%d)"
+          DYNAMIC_TAG="${TODAY}-${GITHUB_RUN_ID}"
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
+          DYNAMIC_IMAGE="${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${DYNAMIC_TAG}"
+          LATEST_IMAGE="${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:latest"
+          echo "dynamic_tag=$DYNAMIC_TAG"         >> "$GITHUB_OUTPUT"
+          echo "dynamic_image=$DYNAMIC_IMAGE"     >> "$GITHUB_OUTPUT"
+          echo "latest_image=$LATEST_IMAGE"       >> "$GITHUB_OUTPUT"
+          echo "Dynamic tag : ${DYNAMIC_IMAGE}"
+          echo "Latest tag  : ${LATEST_IMAGE}"
+
+      - name: Build Docker image with both tags
+        # Tag once with the unique run tag and once as latest.
         run: |
           docker build \
-            -t "${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.image-tag.outputs.image_tag }}" \
+            -t "${{ steps.image-tag.outputs.dynamic_image }}" \
+            -t "${{ steps.image-tag.outputs.latest_image }}" \
             .
 
-      - name: Push image to ECR
-        # Store the image in ECR so the deploy workflow can pull the exact same package.
-        run: |
-          docker push \
-            "${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.image-tag.outputs.image_tag }}"
+      - name: Push dynamic tag to ECR
+        run: docker push "${{ steps.image-tag.outputs.dynamic_image }}"
 
-      - name: Print pushed image URI
-        # Confirm what was pushed so the deploy workflow knows what to pull.
-        run: |
-          echo "Pushed: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.image-tag.outputs.image_tag }}"
+      - name: Push latest tag to ECR
+        run: docker push "${{ steps.image-tag.outputs.latest_image }}"
+
+      - name: Save image URI for deploy
+        # Write the exact dynamic URI so the deploy workflow pulls the right image.
+        run: echo "${{ steps.image-tag.outputs.dynamic_image }}" > image-uri.txt
+
+      - name: Upload image URI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-uri
+          path: image-uri.txt
+          retention-days: 1
