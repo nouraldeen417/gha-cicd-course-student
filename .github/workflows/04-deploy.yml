@@ -2,9 +2,9 @@ name: 04 Deploy Workflow
 
 
 on:
-  workflow_run:
-    workflows: ["03 Build Artifact Workflow"]
-    types: [completed]
+  push:
+    branches:
+      - main
 env:
   IMAGE_NAME: tiny-health-app
   IMAGE_TAR: tiny-health-app.tar
