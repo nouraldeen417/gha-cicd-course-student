@@ -5,7 +5,6 @@ on:
   workflow_run:
     workflows: ["03 Build Artifact Workflow"]
     types: [completed]
-
 env:
   IMAGE_NAME: tiny-health-app
   IMAGE_TAR: tiny-health-app.tar

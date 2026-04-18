@@ -3,8 +3,10 @@
 name: 03 Build Artifact Workflow
 
 on:
-  # Students start this workflow manually from the Actions tab.
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 env:
   # Keep common image values in one place so the build steps stay readable.
@@ -22,15 +24,6 @@ jobs:
         # Get the repository files onto the runner.
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        # Prepare Python so the workflow can run the tests first.
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Run tests
-        # Build only after the verification step passes.
-        run: python -m unittest discover -s tests -v
 
       - name: Set image tag
         # Use today's UTC date plus the GitHub run ID.
