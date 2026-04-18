@@ -30,16 +30,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Run Trivy vulnerability scanner on repository code
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'             # Tells Trivy to scan the filesystem/code directory, not a Docker image
-          scan-ref: '.'               # Scans the current directory (the root of your repo)
-          format: 'table'
-          exit-code: '1'              # Fails the GitHub Action if vulnerabilities are found
-          ignore-unfixed: true
-          vuln-type: 'library'        # Focuses only on application dependencies (like Python packages)
-          severity: 'CRITICAL,HIGH'
       - name: Run tests
         # This is the key verification step in the CI workflow.
         run: python -m unittest discover -s tests -v
@@ -82,9 +72,17 @@ jobs:
         run: |
           docker build \
             -t "${{ steps.image-tag.outputs.dynamic_image }}" \
-            -t "${{ steps.image-tag.outputs.latest_image }}" \
-            .
-
+            -t "${{ steps.image-tag.outputs.latest_image }}" \            .
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ steps.image-tag.outputs.dynamic_image }}'
+          format: 'table'
+          # Fails the build if it finds HIGH or CRITICAL vulnerabilities
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
       - name: Push dynamic tag to ECR
         run: docker push "${{ steps.image-tag.outputs.dynamic_image }}"
 
