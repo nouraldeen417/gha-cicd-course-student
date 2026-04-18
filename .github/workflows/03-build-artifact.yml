@@ -1,8 +1,14 @@
 name: 03 Build Artifact Workflow
 
 on:
-  push:
-    branches: [main]
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
 
 env:
   IMAGE_NAME: tiny-health-app
@@ -12,6 +18,23 @@ permissions:
   contents: read
 
 jobs:
+  run-tests:
+  # The runner is the temporary machine that executes the steps below.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        # Download the repository contents onto the runner.
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        # Prepare Python on the runner. This does not change the student laptop.
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Run tests
+        # This is the key verification step in the CI workflow.
+        run: python -m unittest discover -s tests -v
   build-package:
     runs-on: ubuntu-latest
 

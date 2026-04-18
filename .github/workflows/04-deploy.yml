@@ -1,9 +1,11 @@
 name: 04 Deploy Workflow
 
 on:
-  push:
-    branches: [main]
-
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
 env:
   CONTAINER_NAME: tiny-health-container
   APP_PORT: "8000"
