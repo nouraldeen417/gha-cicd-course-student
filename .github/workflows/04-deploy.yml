@@ -8,7 +8,7 @@ env:
   IMAGE_NAME: tiny-health-app
   CONTAINER_NAME: tiny-health-container
   APP_PORT: "8000"
-  ECR_REPOSITORY: tiny-health-app
+  ECR_REPOSITORY: lab-app
 
 permissions:
   contents: read
