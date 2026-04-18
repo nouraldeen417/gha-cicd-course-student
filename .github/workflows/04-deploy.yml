@@ -80,3 +80,4 @@ jobs:
             # If the test fails, stop the broken container and fail the pipeline
             docker rm -f $CONTAINER_NAME || true
             exit 1
+            
