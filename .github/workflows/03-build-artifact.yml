@@ -72,7 +72,9 @@ jobs:
         run: |
           docker build \
             -t "${{ steps.image-tag.outputs.dynamic_image }}" \
-            -t "${{ steps.image-tag.outputs.latest_image }}" \            .
+            -t "${{ steps.image-tag.outputs.latest_image }}" \
+            .
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
