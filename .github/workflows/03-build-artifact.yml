@@ -8,9 +8,7 @@ on:
       - opened
       - synchronize
       - reopened
-  push:
-      branches:
-        - main
+
 
 env:
   IMAGE_NAME: tiny-health-app
@@ -39,8 +37,6 @@ jobs:
         run: python -m unittest discover -s tests -v
   build-package:
     runs-on: ubuntu-latest
-    needs: run-tests          # 2. ADD THIS: Forces build to wait for tests to pass
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # 3. ADD THIS: Restricts job to run ONLY on the merge
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
