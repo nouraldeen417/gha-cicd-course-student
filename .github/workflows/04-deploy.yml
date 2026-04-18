@@ -28,15 +28,13 @@ jobs:
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set image tag
-        # Same formula as build workflow — same push = same GITHUB_RUN_ID = same tag.
+      - name: Set image URI
+        # Always pull latest — the build workflow updates this tag on every push.
         id: image
         run: |
-          TODAY="$(date -u +%Y-%m-%d)"
-          DYNAMIC_TAG="${TODAY}-${GITHUB_RUN_ID}"
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
-          FULL_IMAGE="${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${DYNAMIC_TAG}"
+          FULL_IMAGE="${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:latest"
           echo "full_image=$FULL_IMAGE" >> "$GITHUB_OUTPUT"
           echo "Pulling image: ${FULL_IMAGE}"
 
