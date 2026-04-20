@@ -11,8 +11,7 @@ env:
   CONTAINER_NAME: tiny-health-container
   APP_PORT: "8000"
   ECR_REPOSITORY: lab-app
-  EC2_HOST: "ec2-52-205-171-253.compute-1.amazonaws.com"
-  EC2_USERNAME: "ubuntu"
+
 permissions:
   contents: read
 
@@ -37,8 +36,8 @@ jobs:
           APP_PORT: ${{ env.APP_PORT }}
           ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
         with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USERNAME }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,CONTAINER_NAME,APP_PORT,ECR_REPOSITORY
           script: |
